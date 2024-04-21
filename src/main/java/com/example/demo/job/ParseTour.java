@@ -1,5 +1,6 @@
 package com.example.demo.job;
 
+import com.example.demo.controllers.FunSunRestController;
 import com.example.demo.entity.LogErrorCodeEntity;
 import com.example.demo.entity.TourInfoEntity;
 import com.example.demo.repository.TourInfoRepo;
@@ -52,14 +53,14 @@ public class ParseTour {
         this.logErrorCodeService = logErrorCodeService;
     }
 
-//    @Scheduled(fixedDelay = 25_000_000)
+    //    @Scheduled(fixedDelay = 25_000_000)
+    @Scheduled(fixedDelay = 10_000)
     public void startParse() {
-        System.out.println(0);
         String url = "https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-22" +
                 "&maxStartDate=2024-08-22&minNightsCount=12&maxNightsCount=15&adults=2&flightTypes=charter&sort=max&stars=5,4&mealTypes=10004,10002,8";
 
-
         ChromeOptions options = new ChromeOptions();
+
         // load page Strategy
         options.setPageLoadStrategy(PageLoadStrategy.NONE);
         // hide browser
@@ -68,8 +69,20 @@ public class ParseTour {
 
         WebDriver webDriver = new ChromeDriver(options);
 
-        webDriver.get(url);
 
+
+// ====================
+        if (FunSunRestController.allLinks.isEmpty()) {
+            FunSunRestController.allLinks.add(url);
+        }
+
+        for (String allLink : FunSunRestController.allLinks) {
+            System.out.println(FunSunRestController.allLinks.size());
+        }
+// =======================
+
+
+        webDriver.get(url);
 
         sleep(webDriver);
         funSunParse(webDriver, 3);
@@ -82,9 +95,11 @@ public class ParseTour {
         funSunParse(webDriver, 13);
         funSunParse(webDriver, 15);
         funSunParse(webDriver, 16);
+        System.out.println("done");
+
         webDriver.quit();
         slipCounter = 0;
-        System.out.println("done");
+        System.out.println("DONE");
     }
 
     private void funSunParse(WebDriver webDriver, int hotel) {
