@@ -2,7 +2,6 @@ package com.example.demo.job;
 
 import com.example.demo.entity.LogErrorCodeEntity;
 import com.example.demo.entity.TourInfoEntity;
-import com.example.demo.repository.LogErrorCodeRepo;
 import com.example.demo.repository.TourInfoRepo;
 import com.example.demo.service.LogErrorCodeService;
 import com.example.demo.service.TourService;
@@ -47,26 +46,28 @@ public class ParseTour {
     private final TourInfoRepo tourInfoRepo;
     private final TourService tourService;
 
-
-    public ParseTour(TourInfoRepo tourInfoRepo, TourService tourService, LogErrorCodeRepo logErrorCodeRepo, LogErrorCodeService logErrorCodeService) {
+    public ParseTour(TourInfoRepo tourInfoRepo, TourService tourService, LogErrorCodeService logErrorCodeService) {
         this.tourInfoRepo = tourInfoRepo;
         this.tourService = tourService;
         this.logErrorCodeService = logErrorCodeService;
     }
 
-    @Scheduled(fixedDelay = 25_000_000)
+//    @Scheduled(fixedDelay = 25_000_000)
     public void startParse() {
+        System.out.println(0);
         String url = "https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-22" +
                 "&maxStartDate=2024-08-22&minNightsCount=12&maxNightsCount=15&adults=2&flightTypes=charter&sort=max&stars=5,4&mealTypes=10004,10002,8";
-        String loc = System.getProperty("user.dir");
-        System.setProperty("webdriver.chrome.driver", loc + "\\demo\\selenium\\chromedriver.exe");
 
-        // hide browser
+
         ChromeOptions options = new ChromeOptions();
+        // load page Strategy
         options.setPageLoadStrategy(PageLoadStrategy.NONE);
+        // hide browser
         options.addArguments("--headless");
+        options.addArguments("--no-sandbox");
 
         WebDriver webDriver = new ChromeDriver(options);
+
         webDriver.get(url);
 
 
@@ -83,10 +84,12 @@ public class ParseTour {
         funSunParse(webDriver, 16);
         webDriver.quit();
         slipCounter = 0;
+        System.out.println("done");
     }
 
     private void funSunParse(WebDriver webDriver, int hotel) {
         try {
+            System.out.println(2);
 //            sleep(webDriver);
             webDriver.findElement(By.xpath("//*[@id=\"searchResult\"]/div[2]/div/div[" + hotel + "]/div/div[2]/div[2]/div[1]/div[1]/div[1]/div[2]/p/a")).click();
             switchTabs = new ArrayList<>(webDriver.getWindowHandles());
@@ -143,7 +146,7 @@ public class ParseTour {
                 }
             } catch (NullPointerException exception) {
                 errorLog("Null point exp (array)");
-                System.exit(2);
+                System.exit(0);
             }
             // switch to first tab
             webDriver.switchTo().window(switchTabs.get(0));
@@ -201,7 +204,7 @@ public class ParseTour {
         if (totalErrorCount >= 10) {
             totalErrorCount = 0;
             errorLog("Pizdec");
-            System.exit(1);
+            System.exit(0);
         }
 
         totalErrorCount++;
