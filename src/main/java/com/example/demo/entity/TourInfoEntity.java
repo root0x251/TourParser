@@ -15,14 +15,14 @@ public class TourInfoEntity {
     private String hotelName;
     @Column(name = "price", columnDefinition = "INTEGER")
     private int tourPrice;
-    @Column(name = "about_hotel", columnDefinition = "TEXT")
-    private String aboutHotel;
-    @Column(name = "more_about_hotel", columnDefinition = "TEXT")
-    private String aboutHotelMore;
-    @Column(name = "beach_info", columnDefinition = "TEXT")
-    private String beachInfo;
-    @Column(name = "reviews", columnDefinition = "FLOAT")
-    private float reviews;
+    @Column(name = "location", columnDefinition = "TEXT")
+    private String location;
+    @Column(name = "fly_date", columnDefinition = "TEXT")
+    private String flyDate;
+    @Column(name = "count_night", columnDefinition = "TEXT")
+    private String countNight;
+    @Column(name = "rating", columnDefinition = "FLOAT")
+    private float rating;
     @Column(name = "count_reviews", columnDefinition = "INTEGER")
     private int countReviews;
     @Column(name = "link", columnDefinition = "TEXT")
@@ -30,19 +30,19 @@ public class TourInfoEntity {
     @Column(name = "difference_in_price", columnDefinition = "INTEGER")
     private int differenceInPrice;
 
+
     public TourInfoEntity() {
     }
 
-    public TourInfoEntity(String hotelName, int tourPrice, String aboutHotel, String aboutHotelMore, String beachInfo, float reviews, int countReviews, String currentLinkOnTour, int differenceInPrice) {
+    public TourInfoEntity(String hotelName, int tourPrice, String location, String flyDate, String countNight, float rating, int countReviews, String currentLinkOnTour, int differenceInPrice) {
         this.hotelName = hotelName;
         this.tourPrice = tourPrice;
-        this.aboutHotel = aboutHotel;
-        this.aboutHotelMore = aboutHotelMore;
-        this.beachInfo = beachInfo;
-        this.reviews = reviews;
+        this.location = location;
+        this.flyDate = flyDate;
+        this.countNight = countNight;
+        this.rating = rating;
         this.countReviews = countReviews;
         this.currentLinkOnTour = currentLinkOnTour;
         this.differenceInPrice = differenceInPrice;
     }
-
 }

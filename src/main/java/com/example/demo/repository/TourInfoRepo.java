@@ -11,4 +11,7 @@ public interface TourInfoRepo extends JpaRepository<TourInfoEntity, Long> {
     @Query(value = "SELECT * FROM public.tour_info WHERE hotel_name = :hotelName", nativeQuery = true)
     TourInfoEntity findByHotelName(String hotelName);
 
+    @Query(value = "SELECT * FROM public.tour_info WHERE fly_date = :flyDate", nativeQuery = true)
+    TourInfoEntity findByFlyDate(String flyDate);
+
 }
