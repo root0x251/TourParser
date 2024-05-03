@@ -5,6 +5,8 @@ import com.example.demo.repository.LogErrorCodeRepo;
 import com.example.demo.service.LogErrorCodeService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class LogErrorCodeImpl implements LogErrorCodeService {
 
@@ -12,6 +14,11 @@ public class LogErrorCodeImpl implements LogErrorCodeService {
 
     public LogErrorCodeImpl(LogErrorCodeRepo logErrorCodeRepo) {
         this.logErrorCodeRepo = logErrorCodeRepo;
+    }
+
+    @Override
+    public List<LogErrorCodeEntity> findAll() {
+        return logErrorCodeRepo.findAll();
     }
 
     @Override
