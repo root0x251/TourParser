@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.entity.TourInfoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -14,7 +15,9 @@ public interface TourInfoRepo extends JpaRepository<TourInfoEntity, Long> {
     @Query(value = "SELECT * FROM public.tour_info WHERE link = :currentLinkOnTour", nativeQuery = true)
     TourInfoEntity findByURL(String currentLinkOnTour);
 
-    @Query(value = "SELECT * FROM public.tour_info WHERE fly_date = :flyDate", nativeQuery = true)
-    TourInfoEntity findByFlyDate(String flyDate);
+
+    @Modifying
+    @Query(value = "UPDATE public.tour_info SET difference_in_price = :differenceInPrice WHERE link = :currentLinkOnTour", nativeQuery = true)
+    void updatePrice(int differenceInPrice, String currentLinkOnTour);
 
 }

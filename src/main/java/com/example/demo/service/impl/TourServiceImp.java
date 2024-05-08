@@ -4,11 +4,13 @@ import com.example.demo.entity.TourInfoEntity;
 import com.example.demo.repository.TourInfoRepo;
 import com.example.demo.service.TourService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class TourServiceImp implements TourService {
     private final TourInfoRepo tourInfoRepo;
 
