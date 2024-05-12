@@ -28,11 +28,10 @@ public class ParseTour {
     // counter to remove link
     int idLinkInWork;
     int countForRemoveLink;
-
     String hotelName = null;
     String location = null;
-    String flyDate = null;
-    String countNight = null;
+    int flyDate = 0;
+    int countNight = 0;
     int reviews = 0;
     float rating = 0.0F;
     int price = 0;
@@ -58,7 +57,7 @@ public class ParseTour {
         ChromeOptions options = new ChromeOptions();
 
         // load page Strategy
-        options.setPageLoadStrategy(PageLoadStrategy.EAGER);
+        options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         // hide browser
         options.addArguments("--headless");
         options.addArguments("--no-sandbox");
@@ -73,7 +72,6 @@ public class ParseTour {
             FunSunRestController.parsLinks.add("https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-07&maxStartDate=2024-08-07&minNightsCount=10&maxNightsCount=14&adults=2&flightTypes=charter&sort=max&mealTypes=10004,8&distanceSea=04093636-6324-4c8e-878b-a27871420711&regions=18535&cities=117164,21094,122878,117154,117163&stars=4,5");
             FunSunRestController.parsLinks.add("https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-08&maxStartDate=2024-08-08&minNightsCount=10&maxNightsCount=14&adults=2&flightTypes=charter&sort=max&mealTypes=10004,8&distanceSea=04093636-6324-4c8e-878b-a27871420711&regions=18535&cities=117164,21094,122878,117154,117163&stars=4,5");
             FunSunRestController.parsLinks.add("https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-09&maxStartDate=2024-08-11&minNightsCount=10&maxNightsCount=14&adults=2&flightTypes=charter&sort=max&mealTypes=10004,8&distanceSea=04093636-6324-4c8e-878b-a27871420711&regions=18535&cities=117164,21094,122878,117154,117163&stars=4,5");
-
             FunSunRestController.parsLinks.add("https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-13&maxStartDate=2024-08-14&minNightsCount=10&maxNightsCount=14&adults=2&flightTypes=charter&sort=max&mealTypes=10004,8&distanceSea=04093636-6324-4c8e-878b-a27871420711&regions=18535&cities=117164,21094,122878,117154,117163&stars=4,5");
             FunSunRestController.parsLinks.add("https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-15&maxStartDate=2024-08-15&minNightsCount=10&maxNightsCount=14&adults=2&flightTypes=charter&sort=max&mealTypes=10004,8&distanceSea=04093636-6324-4c8e-878b-a27871420711&regions=18535&cities=117164,21094,122878,117154,117163&stars=4,5");
             FunSunRestController.parsLinks.add("https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-16&maxStartDate=2024-08-17&minNightsCount=10&maxNightsCount=14&adults=2&flightTypes=charter&sort=max&mealTypes=10004,8&distanceSea=04093636-6324-4c8e-878b-a27871420711&regions=18535&cities=117164,21094,122878,117154,117163&stars=4,5");
@@ -108,9 +106,7 @@ public class ParseTour {
                         webDriver.manage().deleteAllCookies();
                         webDriver.quit();
                     } catch (TimeoutException e) {
-                        System.out.println("timeout 108");
-                        webDriver.navigate().refresh();
-                        System.out.println("timeout 108");
+                        e.printStackTrace();
                     }
                 }
 
@@ -126,60 +122,98 @@ public class ParseTour {
     }
 
     private void funSunParse(WebDriver webDriver, int hotel) {
+        List<String> arrayWithTab = null;
         try {
-            try {
-                // scroll to element
-                WebElement button = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-flight_price > div.hotelCard__description-flight_price-information > div"));
-                Actions actions = new Actions(webDriver);
-                actions.moveToElement(button);
-                actions.perform();
-                // get url
-                webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-header > div.hotelCard__description-header_text > div.hotelCard__description-header_text-name")).click();
-                List<String> arrayWithTab = new ArrayList<>(webDriver.getWindowHandles());
-                webDriver.switchTo().window(arrayWithTab.get(1));
-                currentUrl = webDriver.getCurrentUrl();
-                webDriver.close();
-                webDriver.switchTo().window(arrayWithTab.get(0));
-                arrayWithTab.clear();
-            } catch (NoSuchElementException | ElementClickInterceptedException e) {
-                return;
-            }
+            // scroll to element
+            WebElement button = webDriver.findElement(By.cssSelector("#searchResult > div.tour-search-content__wrap-result > div > div:nth-child(" + hotel + ") > div > div.flex > div.hotel-card__about.flex.line-height > div:nth-child(3) > div:nth-child(3) > div > div > div > div.hotel-card__payment-methods-item.sber > div.hotel-card__payment-methods-item-text"));
+            Actions actions = new Actions(webDriver);
+            actions.moveToElement(button);
+            actions.perform();
+            // go to hotel
+            webDriver.findElement(By.cssSelector("#searchResult > div.tour-search-content__wrap-result > div > div:nth-child(" + hotel + ") > div > div.flex > div.hotel-card__about.flex.line-height > div:nth-child(1) > div.flex.space-between.line-height > div.hotel-card__about-stars-location > div:nth-child(2) > p > a")).click();
+            //create array with tab
+            sleep();
+            arrayWithTab = new ArrayList<>(webDriver.getWindowHandles());
+            // switch to second tab
+            webDriver.switchTo().window(arrayWithTab.get(1));
+            // get url
+            currentUrl = webDriver.getCurrentUrl();
 
             String rating;
             String price;
             String reviews;
+            String flyDate;
+            String countNight;
 
-            hotelName = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-header > div.hotelCard__description-header_text > div.hotelCard__description-header_text-name")).getText();
-            location = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-header > div.hotelCard__description-header_text > div.hotelCard__description-header_text-location")).getText();
-            flyDate = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-flight_price > div.hotelCard__description-flight_price-definition > div.hotelCard__description-flight_price-definition_information")).getText();
-            countNight = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-flight_price > div.hotelCard__description-flight_price-definition > div.hotelCard__description-flight_price-definition_information")).getText();
+            hotelName = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-right > div.hotel__description-title > h1")).getText();
+            location = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-right > div.hotel__description-location > p")).getText();
+
+            button = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(5) > div > h2"));
+            actions = new Actions(webDriver);
+            actions.moveToElement(button);
+
 
 
             try {
-                reviews = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-header > div.hotelCard__description-header_icons > div.hotelCard__description-header_icons-text")).getText();
-                rating = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-header > div.hotelCard__description-header_icons > div.hotelCard__description-header_icons-flex > div.hotelCard__description-header_icons-rating > span")).getText();
-                price = webDriver.findElement(By.cssSelector("#app > div > div.v-main > div.container > div > div > div.search-content > div.search-content__cards.tour-search-content__result > div.search-cards-container > div:nth-child(" + hotel + ") > div.hotelCard__description > div.hotelCard__description-flight_price > div.hotelCard__description-flight_price-information > div")).getText();
+                reviews = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-photos > div.hotel__description-photos__1 > div.hotel__description-reviews > div > div")).getText();
+                rating = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-photos > div.hotel__description-photos__1 > div.hotel__description-reviews > h5")).getText();
+                price = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(5) > div > div.hotel__hotels-filtersWrapper > div.v-hotel-wrapper > div > div > div.hotel__hotels-dates > div.hotel__hotels-date.active.hotel__hotels-date-active > h5.hotel__hotels-date-price")).getText();
+                flyDate = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(5) > div > div.hotel__hotels-filtersWrapper > div.v-hotel-wrapper > div > div > div.hotel__hotels-dates > div.hotel__hotels-date.active.hotel__hotels-date-active > span")).getText();
+                countNight = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(5) > div > div.hotel__hotels-filtersWrapper > div.hotel__hotels-sliders > div.hotel__hotels-nights-meals > div.hotel__hotels-meals-wrapper > div > div.hotel__hotels-meal.active")).getText();
+
+                this.flyDate = Integer.parseInt(flyDate.replaceAll("[^\\d.]", ""));
+                this.countNight = Integer.parseInt(countNight.replaceAll("[^\\d.]", ""));
                 this.price = Integer.parseInt(price.replaceAll("[^\\d.]", ""));
                 this.reviews = Integer.parseInt(reviews.replaceAll("[^\\d.]", ""));
                 this.rating = Float.parseFloat(rating.replaceAll("[^\\d.]", ""));
+
             } catch (NumberFormatException | NoSuchElementException e) {
                 this.reviews = 0;
                 this.rating = 0;
             }
 
+
+            webDriver.close();
+            webDriver.switchTo().window(arrayWithTab.get(0));
+            arrayWithTab.clear();
+
+
         } catch (org.openqa.selenium.NoSuchElementException e) {
             errorLog("NoSuchElementException", webDriver);
+            if (arrayWithTab != null) {
+                if (arrayWithTab.size() > 2) {
+                    webDriver.close();
+                    webDriver.switchTo().window(arrayWithTab.get(0));
+                    arrayWithTab.clear();
+                }
+            }
+            return;
         } catch (ElementClickInterceptedException e) {
             errorLog("ClickInterceptedException", webDriver);
+            if (arrayWithTab != null) {
+                if (arrayWithTab.size() > 2) {
+                    webDriver.close();
+                    webDriver.switchTo().window(arrayWithTab.get(0));
+                    arrayWithTab.clear();
+                }
+            }
+            return;
         } catch (JavascriptException exception) {
             errorLog("JavascriptException", webDriver);
+            if (arrayWithTab != null) {
+                if (arrayWithTab.size() > 2) {
+                    webDriver.close();
+                    webDriver.switchTo().window(arrayWithTab.get(0));
+                    arrayWithTab.clear();
+                }
+            }
+            return;
         } catch (TimeoutException e) {
-            System.out.println("timeout 169");
-            webDriver.navigate().refresh();
-            System.out.println("timeout 169");
-        } catch (NoSuchWindowException ignore) {
-
+            e.printStackTrace();
+        } catch (NoSuchWindowException e) {
+            e.printStackTrace();
         }
+
         // no such element
         if (currentUrl != null) {
             if (this.price <= 220000 && this.rating >= 4) {
@@ -205,12 +239,12 @@ public class ParseTour {
         }
         // update tour price
         if (tourInfoRepo.findByURL(currentUrl).getTourPrice() != price) {
-            tourInfoRepo.findByURL(currentUrl).setDifferenceInPrice(tourInfoRepo.findByURL(currentUrl).getTourPrice() - price);
+            tourInfoRepo.updateHotelPrice(price, tourInfoRepo.findByURL(currentUrl).getTourPrice() - price, currentUrl);
         }
     }
 
     private void sleep() {
-        int random = new Random().nextInt(6000) + 3000;
+        int random = new Random().nextInt(15000) + 10000;
         try {
             Thread.sleep(random);
         } catch (InterruptedException ex) {

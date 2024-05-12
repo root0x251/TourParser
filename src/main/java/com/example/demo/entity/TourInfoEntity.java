@@ -17,10 +17,10 @@ public class TourInfoEntity {
     private int tourPrice;
     @Column(name = "location", columnDefinition = "TEXT")
     private String location;
-    @Column(name = "fly_date", columnDefinition = "TEXT")
-    private String flyDate;
-    @Column(name = "count_night", columnDefinition = "TEXT")
-    private String countNight;
+    @Column(name = "fly_date", columnDefinition = "INTEGER")
+    private int flyDate;
+    @Column(name = "count_night", columnDefinition = "INTEGER")
+    private int countNight;
     @Column(name = "rating", columnDefinition = "FLOAT")
     private float rating;
     @Column(name = "count_reviews", columnDefinition = "INTEGER")
@@ -34,7 +34,7 @@ public class TourInfoEntity {
     public TourInfoEntity() {
     }
 
-    public TourInfoEntity(String hotelName, int tourPrice, String location, String flyDate, String countNight, float rating, int countReviews, String currentLinkOnTour, int differenceInPrice) {
+    public TourInfoEntity(String hotelName, int tourPrice, String location, int flyDate, int countNight, float rating, int countReviews, String currentLinkOnTour, int differenceInPrice) {
         this.hotelName = hotelName;
         this.tourPrice = tourPrice;
         this.location = location;
