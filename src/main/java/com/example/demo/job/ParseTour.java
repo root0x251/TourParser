@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -104,9 +105,12 @@ public class ParseTour {
                     try {
                         System.out.println("webDriver.quit() Array = " + i);
                         webDriver.manage().deleteAllCookies();
+                        webDriver.close();
                         webDriver.quit();
                     } catch (TimeoutException e) {
                         e.printStackTrace();
+                    } catch (NoSuchSessionException ignore) {
+
                     }
                 }
 
@@ -151,7 +155,6 @@ public class ParseTour {
             button = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(5) > div > h2"));
             actions = new Actions(webDriver);
             actions.moveToElement(button);
-
 
 
             try {
@@ -257,13 +260,15 @@ public class ParseTour {
         DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
         Date date = new Date();
 
-        if (totalErrorCount == 20) {
+        if (totalErrorCount == 10) {
             totalErrorCount = 0;
             LogErrorCodeEntity logErrorCodeEntity = new LogErrorCodeEntity("PZDC", dateFormat.format(date), "Fun Sun");
             logErrorCodeService.saveErrorLog(logErrorCodeEntity);
+            webDriver.close();
             webDriver.quit();
             return;
         }
+
 
         if (countForRemoveLink == 15) {
             countForRemoveLink = 0;
