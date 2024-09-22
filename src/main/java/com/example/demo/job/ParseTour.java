@@ -2,11 +2,15 @@ package com.example.demo.job;
 
 import com.example.demo.controllers.FunSunRestController;
 import com.example.demo.entity.LogErrorCodeEntity;
+import com.example.demo.entity.ParseLinkEntity;
 import com.example.demo.entity.TourInfoEntity;
 import com.example.demo.repository.TourInfoRepo;
 import com.example.demo.service.LogErrorCodeService;
+import com.example.demo.service.ParseLinkService;
 import com.example.demo.service.TourService;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,14 +18,10 @@ import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.NoSuchElementException;
 import java.util.*;
 
 @Component
 public class ParseTour {
-
-    // array with browser tabs
-    private ArrayList<String> switchTabs;
 
     // error counter
     private int errorCount = 0;
@@ -31,163 +31,97 @@ public class ParseTour {
     private int slipCounter = 0;
 
     String hotelName = null;
-    String about = null;
-    String aboutMore = null;
-    String beach = null;
     String currentUrl = null;
     int price;
-    int countReviews;
-    float reviews;
 
     // log error
     private final LogErrorCodeService logErrorCodeService;
-
     // Tour entity, repos, service
     private TourInfoEntity tourInfoEntity;
     private final TourInfoRepo tourInfoRepo;
     private final TourService tourService;
+    private final ParseLinkService parseLinkService;
 
-    public ParseTour(TourInfoRepo tourInfoRepo, TourService tourService, LogErrorCodeService logErrorCodeService) {
+    public ParseTour(LogErrorCodeService logErrorCodeService, TourInfoRepo tourInfoRepo, TourService tourService, ParseLinkService parseLinkService) {
+        this.logErrorCodeService = logErrorCodeService;
         this.tourInfoRepo = tourInfoRepo;
         this.tourService = tourService;
-        this.logErrorCodeService = logErrorCodeService;
+        this.parseLinkService = parseLinkService;
     }
 
     //    @Scheduled(fixedDelay = 25_000_000)
-    @Scheduled(fixedDelay = 10_000)
+    @Scheduled(fixedDelay = 50_000)
     public void startParse() {
-        String url = "https://fstravel.com/searchtour/country/africa/egypt?departureCityId=244707&arrivalCountryId=18498&minStartDate=2024-08-22" +
-                "&maxStartDate=2024-08-22&minNightsCount=12&maxNightsCount=15&adults=2&flightTypes=charter&sort=max&stars=5,4&mealTypes=10004,10002,8";
-
         ChromeOptions options = new ChromeOptions();
+        options.addArguments("--headless");                // Включаем headless режим
+        options.addArguments("--incognito");               // Включаем инкогнито
+        options.addArguments("--disable-extensions");      // Отключаем расширения
+        options.addArguments("--disable-gpu");             // Отключаем GPU
+        options.addArguments("--no-sandbox");              // Отключаем песочницу
+        options.addArguments("--disable-dev-shm-usage");   // Отключаем /dev/shm для сервера
+        options.addArguments("--window-size=1920,1080");   // Устанавливаем размер окна браузера
+        options.addArguments("--disable-blink-features=AutomationControlled"); // Отключаем обнаружение Selenium
 
-        // load page Strategy
-        options.setPageLoadStrategy(PageLoadStrategy.NONE);
-        // hide browser
-        options.addArguments("--headless");
-        options.addArguments("--no-sandbox");
+        // Меняем User-Agent на стандартный пользовательский
+        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
-        WebDriver webDriver = new ChromeDriver(options);
+        // Отключение автоматической идентификации Selenium через переменные
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("credentials_enable_service", false);
+        prefs.put("profile.password_manager_enabled", false);
+        options.setExperimentalOption("prefs", prefs);
 
+        // Отключаем автоматизацию на уровне JS для более сложных проверок
+        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+        options.setExperimentalOption("useAutomationExtension", false);
 
+        WebDriverManager.chromedriver().setup();
 
-// ====================
-        if (FunSunRestController.allLinks.isEmpty()) {
-            FunSunRestController.allLinks.add(url);
+        for (ParseLinkEntity link : parseLinkService.findAll()) {
+            WebDriver webDriver = new ChromeDriver(options);
+            webDriver.get(link.getLink());
+            sleep(webDriver);
+            funSunParse(webDriver);
+            System.out.println("done");
         }
 
-        for (String allLink : FunSunRestController.allLinks) {
-            System.out.println(FunSunRestController.allLinks.size());
-        }
-// =======================
+//        for (String link : FunSunRestController.allLinks) {
+//        }
 
-
-        webDriver.get(url);
-
-        sleep(webDriver);
-        funSunParse(webDriver, 3);
-        funSunParse(webDriver, 4);
-        funSunParse(webDriver, 6);
-        funSunParse(webDriver, 7);
-        funSunParse(webDriver, 9);
-        funSunParse(webDriver, 10);
-        funSunParse(webDriver, 12);
-        funSunParse(webDriver, 13);
-        funSunParse(webDriver, 15);
-        funSunParse(webDriver, 16);
-        System.out.println("done");
-
-        webDriver.quit();
+        System.out.println("===========DONE===========");
         slipCounter = 0;
-        System.out.println("DONE");
     }
 
-    private void funSunParse(WebDriver webDriver, int hotel) {
+    private void funSunParse(WebDriver webDriver) {
         try {
-            System.out.println(2);
-//            sleep(webDriver);
-            webDriver.findElement(By.xpath("//*[@id=\"searchResult\"]/div[2]/div/div[" + hotel + "]/div/div[2]/div[2]/div[1]/div[1]/div[1]/div[2]/p/a")).click();
-            switchTabs = new ArrayList<>(webDriver.getWindowHandles());
-            webDriver.switchTo().window(switchTabs.get(1));
-            sleep(webDriver);
-
-            hotelName = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-right > div.hotel__description-title > h1")).getText();
-            about = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-bottom > div.hotel__description-description > p")).getText();
-
-            try {
-                // remove unnecessary (from price) and convert to int
-                String price = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-right > div.hotel__description-price > div.hotel__description-price-numbers > h2")).getText();
-                this.price = Integer.parseInt(price.replaceAll("[^\\d.]", ""));
-                // remove unnecessary elements (from count reviews)
-                String countReviews = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-photos > div.hotel__description-photos__1 > div.hotel__description-reviews > div > div")).getText();
-                this.countReviews = Integer.parseInt(countReviews.replaceAll("[^\\d.]", ""));
-                reviews = Float.parseFloat(webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-wrapper > div.hotel__description-photos > div.hotel__description-photos__1 > div.hotel__description-reviews > h5")).getText());
-            } catch (NumberFormatException e) {
-                reviews = 0.11F;
-            } catch (NoSuchElementException exception) {
-                // page not load
-                closeBrowserTab(webDriver, hotel);
-            }
-
-            // more info about hotel
-            webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.hotel__description-bottom > div.hotel__description-description > div")).click();
-            aboutMore = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.about-hotel-popup > div > div:nth-child(2)")).getText();
-            // more about beach
-            webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.about-hotel-popup > div > div.about-hotel-popup__menu > div:nth-child(6)")).click();
-            beach = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div.hotel__description.container > div.about-hotel-popup > div > div:nth-child(7)")).getText();
-
+            hotelName = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotelInfoHead > div.flex > div:nth-child(1) > h1")).getText();
+            String price = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotel-info-box > div:nth-child(2) > div > div.pay > div.pay__price > div")).getText();
+            this.price = Integer.parseInt(price.replaceAll("[^\\d.]", ""));
             currentUrl = webDriver.getCurrentUrl();
-
             // work with DataBase
             workWithDataBase();
 
         } catch (NoSuchElementException exception) {
-            if (errorCount <= 2) {
-                // if error (pop up banner/DDOS)
-                errorLog("NoSuchElementException (Pop up)");
-                closeBrowserTab(webDriver, hotel);
-            }
-        } catch (ElementClickInterceptedException exception) {
-            // if error (pop up banner/DDOS)
-            errorLog("ElementClickInterceptedException (DDOS/Pop up)");
-            closeBrowserTab(webDriver, hotel);
-        } finally {
-            // close tab tour, switch to first tab
-            try {
-                if (switchTabs.size() == 2) {
-                    webDriver.close();
-                    switchTabs.remove(1);
-                    errorCount = 0;
-                }
-            } catch (NullPointerException exception) {
-                errorLog("Null point exp (array)");
-                System.exit(0);
-            }
-            // switch to first tab
-            webDriver.switchTo().window(switchTabs.get(0));
+            errorLog("NoSuchElementException");
+            closeBrowser(webDriver);
         }
     }
 
-    private void closeBrowserTab(WebDriver webDriver, int hotel) {
-        webDriver.switchTo().window(switchTabs.get(1));
-        webDriver.close();
-        webDriver.switchTo().window(switchTabs.get(0));
-        switchTabs.remove(1);
-        errorCount++;
-        funSunParse(webDriver, hotel);
+    private void closeBrowser(WebDriver webDriver) {
+        webDriver.quit();
     }
 
     private void workWithDataBase() {
         // if there are no data, save to database
         if (tourInfoRepo.findByHotelName(hotelName) == null) {
-            tourInfoEntity = new TourInfoEntity(hotelName, price, about, aboutMore, beach, reviews, countReviews, currentUrl, 0);
+            tourInfoEntity = new TourInfoEntity(hotelName, price, currentUrl, 0);
             tourService.saveTour(tourInfoEntity);
         }
         // update data in DB
         if (!Objects.equals(tourInfoRepo.findByHotelName(hotelName).getTourPrice(), price)) {
             // difference in price
             int priceDifference = tourInfoEntity.getTourPrice() - price;
-            tourService.updateTour(new TourInfoEntity(hotelName, price, about, aboutMore, beach, reviews, countReviews, currentUrl, priceDifference));
+            tourService.updateTour(new TourInfoEntity(hotelName, price, currentUrl, priceDifference));
         }
 
     }
@@ -197,10 +131,10 @@ public class ParseTour {
         int random;
         try {
             if (slipCounter <= 1) {
-                random = new Random().nextInt(25000) + 15000;
+                random = new Random().nextInt(2000) + 5000;
                 Thread.sleep(random);
             } else {
-                random = new Random().nextInt(10000) + 8000;
+                random = new Random().nextInt(4000) + 8000;
                 Thread.sleep(random);
                 ((JavascriptExecutor) webDriver).executeScript("window.stop();");
             }

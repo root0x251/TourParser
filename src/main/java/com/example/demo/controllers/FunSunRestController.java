@@ -1,23 +1,22 @@
 package com.example.demo.controllers;
 
+import com.example.demo.entity.ParseLinkEntity;
 import com.example.demo.entity.TourInfoEntity;
+import com.example.demo.service.ParseLinkService;
 import com.example.demo.service.TourService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 public class FunSunRestController {
-
-    public static ArrayList<String> allLinks = new ArrayList<>();
-
     private final TourService tourService;
+    private final ParseLinkService parseLinkService;
 
-    public FunSunRestController(TourService tourService) {
+    public FunSunRestController(TourService tourService, ParseLinkService parseLinkService) {
         this.tourService = tourService;
+        this.parseLinkService = parseLinkService;
     }
-
 
     // get all tours
     @GetMapping("/all")
@@ -25,22 +24,24 @@ public class FunSunRestController {
         return tourService.findAll();
     }
 
+    // add link to DB
     @PostMapping("/add")
     public String setTourLink(@RequestBody String link) {
-        String result = link.replace("\"", "");
-        allLinks.add(result);
+        parseLinkService.saveLink(new ParseLinkEntity(link.replace("\"", "")));
         return "done";
     }
 
+    // Get all Links
     @GetMapping("/allLinksFromArray")
-    public ArrayList<String> setTourLink() {
-        return allLinks;
+    public List<ParseLinkEntity> getAllTourLinks() {
+        return parseLinkService.findAll();
     }
 
+    // Remove link By ID
     @DeleteMapping("/remove/{id}")
-    public String removeFromArray(@PathVariable int id) {
+    public String removeLinkById(@PathVariable Long id) {
         try {
-            allLinks.remove(id);
+            parseLinkService.deleteLinkById(id);
         } catch (IndexOutOfBoundsException e) {
             return "error";
         }
