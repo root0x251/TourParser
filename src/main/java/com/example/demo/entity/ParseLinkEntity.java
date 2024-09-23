@@ -18,4 +18,5 @@ public class ParseLinkEntity {
     public ParseLinkEntity(String link) {
         this.link = link;
     }
+
 }

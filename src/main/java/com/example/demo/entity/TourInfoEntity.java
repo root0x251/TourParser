@@ -17,16 +17,18 @@ public class TourInfoEntity {
     private String hotelName;
     @Column(name = "price", columnDefinition = "INTEGER")
     private int tourPrice;
+    @Column(name = "old_price", columnDefinition = "INTEGER")
+    private int oldTourPrice;
     @Column(name = "link", columnDefinition = "TEXT")
     private String currentLinkOnTour;
     @Column(name = "difference_in_price", columnDefinition = "INTEGER")
     private int differenceInPrice;
 
-    public TourInfoEntity(String hotelName, int tourPrice, String currentLinkOnTour, int differenceInPrice) {
+    public TourInfoEntity(String hotelName, int tourPrice, int oldTourPrice, String currentLinkOnTour, int differenceInPrice) {
         this.hotelName = hotelName;
         this.tourPrice = tourPrice;
+        this.oldTourPrice = oldTourPrice;
         this.currentLinkOnTour = currentLinkOnTour;
         this.differenceInPrice = differenceInPrice;
     }
-
 }
