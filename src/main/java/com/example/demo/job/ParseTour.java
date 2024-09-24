@@ -7,7 +7,9 @@ import com.example.demo.repository.TourInfoRepo;
 import com.example.demo.service.LogErrorCodeService;
 import com.example.demo.service.ParseLinkService;
 import com.example.demo.service.TourService;
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,18 +17,13 @@ import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 @Component
 public class ParseTour {
-    // error counter
-    private int errorCount = 0;
-    // if
-    private int totalErrorCount = 0;
 
-    private int slipCounter = 0;
+    private boolean shouldRun = true;
+    private int totalErrorCount = 0;
 
     String hotelName = null;
     String currentUrl = null;
@@ -34,8 +31,6 @@ public class ParseTour {
 
     // log error
     private final LogErrorCodeService logErrorCodeService;
-    // Tour entity, repos, service
-    private TourInfoEntity tourInfoEntity;
     private final TourInfoRepo tourInfoRepo;
     private final TourService tourService;
     private final ParseLinkService parseLinkService;
@@ -47,9 +42,10 @@ public class ParseTour {
         this.parseLinkService = parseLinkService;
     }
 
-    //    @Scheduled(fixedDelay = 25_000_000)
+    //one-hour delay
     @Scheduled(fixedDelay = 3_600_000)
     public void startParse() {
+        shouldRun = true;
         System.out.println("================== start Scheduled ==================");
         System.out.println("================== start ChromeOptions ==================");
         ChromeOptions options = getChromeOptions();
@@ -58,34 +54,60 @@ public class ParseTour {
         sleep();
 
         System.out.println("================== start WebDriverManager ==================");
-//        WebDriverManager.chromedriver().setup();
-        System.setProperty("webdriver.chrome.driver", "/usr/local/bin/chromedriver");
+        WebDriverManager.chromedriver().setup();
 
         System.out.println("================== Loop get link from DB================== ");
         for (ParseLinkEntity link : parseLinkService.findAll()) {
+            if (!shouldRun) {
+                return;
+            }
             System.out.println("================== start WebDriver ================== ");
             try {
                 WebDriver webDriver = new ChromeDriver(options);
-//                WebDriver webDriver = new ChromeDriver(options);
                 System.out.println("================== start sleep ==================");
                 sleep();
                 System.out.println("================== start get link ==================");
                 webDriver.get(link.getLink());
                 System.out.println("================== start sleep ==================");
-                sleep(webDriver);
+                sleep();
                 System.out.println("================== start parser ==================");
                 funSunParse(webDriver);
                 System.out.println("================== done with Link ==================");
             } catch (SessionNotCreatedException e) {
                 errorLog("SessionNotCreatedException");
+                shouldRun = false;
+            } catch (TimeoutException e) {
+                errorLog("TimeoutException");
+                shouldRun = false;
             }
         }
 
-//        for (String link : FunSunRestController.allLinks) {
-//        }
-
         System.out.println("===========Stop execution===========");
-        slipCounter = 0;
+    }
+
+    private void funSunParse(WebDriver webDriver) {
+        System.out.println("================== start sleep ==================");
+        sleep();
+        System.out.println("================== Try get info ==================");
+        try {
+            hotelName = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotelInfoHead > div.flex > div:nth-child(1) > h1")).getText();
+            String price = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotel-info-box > div:nth-child(2) > div > div.pay > div.pay__price > div")).getText();
+            this.price = Integer.parseInt(price.replaceAll("[^\\d.]", ""));
+            currentUrl = webDriver.getCurrentUrl();
+
+            System.out.println(hotelName);
+            System.out.println(price);
+            // work with DataBase
+            System.out.println("================== Start work with DB ==================");
+            workWithDataBase();
+
+        } catch (NoSuchElementException exception) {
+            errorLog("NoSuchElementException");
+        } catch (NumberFormatException exception) {
+            errorLog("NumberFormatException");
+        } catch (TimeoutException exception) {
+            errorLog("TimeoutException");
+        }
     }
 
     private static ChromeOptions getChromeOptions() {
@@ -95,56 +117,32 @@ public class ParseTour {
         options.addArguments("--disable-extensions");      // Отключаем расширения
         options.addArguments("--disable-gpu");             // Отключаем GPU
         options.addArguments("--no-sandbox");              // Отключаем песочницу
-//        options.addArguments("--disable-dev-shm-usage");   // Отключаем /dev/shm для сервера
-//        options.addArguments("--window-size=1920,1080");   // Устанавливаем размер окна браузера
-//        options.addArguments("--disable-blink-features=AutomationControlled"); // Отключаем обнаружение Selenium
+        options.addArguments("--disable-dev-shm-usage");   // Отключаем /dev/shm для сервера
+        options.addArguments("--window-size=1920,1080");   // Устанавливаем размер окна браузера
+        options.addArguments("--disable-blink-features=AutomationControlled"); // Отключаем обнаружение Selenium
+        options.setPageLoadStrategy(PageLoadStrategy.NORMAL);
 
-        //        // Меняем User-Agent на стандартный пользовательский
-//        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-//
-//        // Отключение автоматической идентификации Selenium через переменные
-//        Map<String, Object> prefs = new HashMap<>();
-//        prefs.put("credentials_enable_service", false);
-//        prefs.put("profile.password_manager_enabled", false);
-//        options.setExperimentalOption("prefs", prefs);
-//
-//        // Отключаем автоматизацию на уровне JS для более сложных проверок
-//        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
-//        options.setExperimentalOption("useAutomationExtension", false);
+        // Меняем User-Agent на стандартный пользовательский
+        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+
+        // Отключение автоматической идентификации Selenium через переменные
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("credentials_enable_service", false);
+        prefs.put("profile.password_manager_enabled", false);
+        options.setExperimentalOption("prefs", prefs);
+
+        // Отключаем автоматизацию на уровне JS для более сложных проверок
+        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+        options.setExperimentalOption("useAutomationExtension", false);
 
         return options;
-    }
-
-    private void funSunParse(WebDriver webDriver) {
-        System.out.println("================== Try get info ==================");
-        try {
-            hotelName = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotelInfoHead > div.flex > div:nth-child(1) > h1")).getText();
-            String price = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotel-info-box > div:nth-child(2) > div > div.pay > div.pay__price > div")).getText();
-            this.price = Integer.parseInt(price.replaceAll("[^\\d.]", ""));
-            currentUrl = webDriver.getCurrentUrl();
-            // work with DataBase
-            System.out.println("================== Start work with DB ==================");
-            workWithDataBase();
-
-        } catch (NoSuchElementException exception) {
-            errorLog("NoSuchElementException");
-            closeBrowser(webDriver);
-        } catch (NumberFormatException exception) {
-            errorLog("NoSuchElementException");
-            closeBrowser(webDriver);
-        } catch (TimeoutException exception) {
-            errorLog("TimeoutException");
-        }
-    }
-
-    private void closeBrowser(WebDriver webDriver) {
-        webDriver.quit();
     }
 
     private void workWithDataBase() {
         // if there are no data, save to database
         if (tourInfoRepo.findByHotelName(hotelName) == null) {
-            tourInfoEntity = new TourInfoEntity(hotelName, price, price, currentUrl, 0);
+            // Tour entity, repos, service
+            TourInfoEntity tourInfoEntity = new TourInfoEntity(hotelName, price, price, currentUrl, 0);
             tourService.saveTour(tourInfoEntity);
         }
         // update data in DB
@@ -162,26 +160,11 @@ public class ParseTour {
 
     }
 
-    private void sleep(WebDriver webDriver) {
-        slipCounter++;
-        int random;
-        try {
-            if (slipCounter <= 1) {
-                random = new Random().nextInt(2000) + 5000;
-                Thread.sleep(random);
-            } else {
-                random = new Random().nextInt(4000) + 8000;
-                Thread.sleep(random);
-                ((JavascriptExecutor) webDriver).executeScript("window.stop();");
-            }
-        } catch (InterruptedException e) {
-            errorLog("Thread sleep exception");
-        }
-    }
-
     private void sleep() {
+        int rand = new Random().nextInt(5000) + 8000;
+        System.out.println(rand / 1000 + " sec");
         try {
-            Thread.sleep(new Random().nextInt(2000) + 5000);
+            Thread.sleep(rand);
         } catch (InterruptedException e) {
             errorLog("Thread sleep exception");
         }
