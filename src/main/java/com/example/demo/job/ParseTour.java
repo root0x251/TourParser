@@ -9,7 +9,6 @@ import com.example.demo.service.ParseLinkService;
 import com.example.demo.service.TourService;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +16,10 @@ import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 @Component
 public class ParseTour {
@@ -43,7 +45,8 @@ public class ParseTour {
     }
 
     //one-hour delay
-    @Scheduled(fixedDelay = 3_600_000)
+//    @Scheduled(fixedDelay = 3_600_000)
+    @Scheduled(fixedDelay = 100_000)
     public void startParse() {
         shouldRun = true;
         System.out.println("================== start Scheduled ==================");
@@ -55,6 +58,7 @@ public class ParseTour {
 
         System.out.println("================== start WebDriverManager ==================");
         WebDriverManager.chromedriver().setup();
+        WebDriver webDriver = null;
 
         System.out.println("================== Loop get link from DB================== ");
         for (ParseLinkEntity link : parseLinkService.findAll()) {
@@ -63,7 +67,7 @@ public class ParseTour {
             }
             System.out.println("================== start WebDriver ================== ");
             try {
-                WebDriver webDriver = new ChromeDriver(options);
+                webDriver = new ChromeDriver(options);
                 System.out.println("================== start sleep ==================");
                 sleep();
                 System.out.println("================== start get link ==================");
@@ -73,12 +77,15 @@ public class ParseTour {
                 System.out.println("================== start parser ==================");
                 funSunParse(webDriver);
                 System.out.println("================== done with Link ==================");
+                webDriverQuit(webDriver, "no Error");
             } catch (SessionNotCreatedException e) {
                 errorLog("SessionNotCreatedException");
                 shouldRun = false;
+                webDriverQuit(webDriver, "SessionNotCreatedException");
             } catch (TimeoutException e) {
                 errorLog("TimeoutException");
                 shouldRun = false;
+                webDriverQuit(webDriver, "SessionNotCreatedException");
             }
         }
 
@@ -103,11 +110,56 @@ public class ParseTour {
 
         } catch (NoSuchElementException exception) {
             errorLog("NoSuchElementException");
+            webDriverQuit(webDriver, "NoSuchElementException");
+            shouldRun = false;
         } catch (NumberFormatException exception) {
             errorLog("NumberFormatException");
+            webDriverQuit(webDriver, "NumberFormatException");
+            shouldRun = false;
         } catch (TimeoutException exception) {
             errorLog("TimeoutException");
+            webDriverQuit(webDriver, "TimeoutException");
+            shouldRun = false;
         }
+    }
+
+    private void webDriverQuit(WebDriver webDriver, String error) {
+        System.out.println(error);
+        webDriver.quit();
+    }
+
+    private void workWithDataBase() {
+        // if there are no data, save to database or update
+        TourInfoEntity tourInfoEntity = tourInfoRepo.findByHotelName(hotelName);
+        if (tourInfoEntity == null) {
+            tourInfoEntity = new TourInfoEntity(hotelName, price, price, currentUrl, 0);
+            tourService.saveTour(tourInfoEntity);
+        } else {
+            int priceDifference = tourInfoEntity.getTourPrice() - price;
+            tourInfoEntity.setOldTourPrice(tourInfoEntity.getTourPrice());
+            tourInfoEntity.setTourPrice(price);
+            tourInfoEntity.setDifferenceInPrice(priceDifference);
+            tourService.updateTour(tourInfoEntity);
+        }
+
+        System.out.println("================== End work with DB ==================");
+    }
+
+    private void errorLog(String errorCode) {
+        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
+        Date date = new Date();
+        LogErrorCodeEntity logErrorCodeEntity = new LogErrorCodeEntity(errorCode, dateFormat.format(date), "Fun Sun");
+        logErrorCodeService.saveErrorLog(logErrorCodeEntity);
+
+        if (totalErrorCount >= 10) {
+            totalErrorCount = 0;
+            errorLog("Pizdec");
+            System.exit(0);
+        }
+
+        System.out.println("!!!!!!!!!!!!!!!!!!!!!   " + errorCode);
+
+        totalErrorCount++;
     }
 
     private static ChromeOptions getChromeOptions() {
@@ -138,28 +190,6 @@ public class ParseTour {
         return options;
     }
 
-    private void workWithDataBase() {
-        // if there are no data, save to database
-        if (tourInfoRepo.findByHotelName(hotelName) == null) {
-            // Tour entity, repos, service
-            TourInfoEntity tourInfoEntity = new TourInfoEntity(hotelName, price, price, currentUrl, 0);
-            tourService.saveTour(tourInfoEntity);
-        }
-        // update data in DB
-        if (!Objects.equals(tourInfoRepo.findByHotelName(hotelName).getTourPrice(), price)) {
-            // difference in price
-            int priceDifference = tourInfoRepo.findByHotelName(hotelName).getTourPrice() - price;
-            TourInfoEntity tourInfoEntity = tourInfoRepo.findByHotelName(hotelName);
-            tourInfoEntity.setOldTourPrice(tourInfoEntity.getTourPrice());
-            tourInfoEntity.setTourPrice(price);
-            tourInfoEntity.setDifferenceInPrice(priceDifference);
-            tourService.updateTour(tourInfoEntity);
-        }
-
-        System.out.println("================== End work with DB ==================");
-
-    }
-
     private void sleep() {
         int rand = new Random().nextInt(5000) + 8000;
         System.out.println(rand / 1000 + " sec");
@@ -168,24 +198,6 @@ public class ParseTour {
         } catch (InterruptedException e) {
             errorLog("Thread sleep exception");
         }
-    }
-
-    // Error log to DB
-    private void errorLog(String errorCode) {
-        DateFormat dateFormat = new SimpleDateFormat("dd/MM/yy HH:mm:ss");
-        Date date = new Date();
-        LogErrorCodeEntity logErrorCodeEntity = new LogErrorCodeEntity(errorCode, dateFormat.format(date), "Fun Sun");
-        logErrorCodeService.saveErrorLog(logErrorCodeEntity);
-
-        if (totalErrorCount >= 10) {
-            totalErrorCount = 0;
-            errorLog("Pizdec");
-            System.exit(0);
-        }
-
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!   " + errorCode);
-
-        totalErrorCount++;
     }
 
 }
