@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "tour_info")
 public class TourInfoEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private int id;
     @Column(name = "hotel_name", columnDefinition = "TEXT")

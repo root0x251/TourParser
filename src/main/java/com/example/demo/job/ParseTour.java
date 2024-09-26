@@ -1,14 +1,18 @@
 package com.example.demo.job;
 
+import com.example.demo.entity.FunSunSearchBySelectorEntity;
 import com.example.demo.entity.LogErrorCodeEntity;
 import com.example.demo.entity.ParseLinkEntity;
 import com.example.demo.entity.TourInfoEntity;
+import com.example.demo.repository.FunSunSelectorRepo;
 import com.example.demo.repository.TourInfoRepo;
+import com.example.demo.service.FunSunSelectorService;
 import com.example.demo.service.LogErrorCodeService;
 import com.example.demo.service.ParseLinkService;
 import com.example.demo.service.TourService;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,10 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 @Component
 public class ParseTour {
@@ -27,27 +28,39 @@ public class ParseTour {
     private boolean shouldRun = true;
     private int totalErrorCount = 0;
 
-    String hotelName = null;
-    String currentUrl = null;
-    int price;
+    private String hotelName = null;
+    private String currentUrl = null;
+    private int price;
+
+    private FunSunSearchBySelectorEntity funSunSearchBySelectorEntity;
 
     // log error
     private final LogErrorCodeService logErrorCodeService;
     private final TourInfoRepo tourInfoRepo;
     private final TourService tourService;
     private final ParseLinkService parseLinkService;
+    private final FunSunSelectorService funSunSelectorService;
+    private final FunSunSelectorRepo funSunSelectorRepo;
 
-    public ParseTour(LogErrorCodeService logErrorCodeService, TourInfoRepo tourInfoRepo, TourService tourService, ParseLinkService parseLinkService) {
+    public ParseTour(LogErrorCodeService logErrorCodeService, TourInfoRepo tourInfoRepo, TourService tourService, ParseLinkService parseLinkService, FunSunSelectorService funSunSelectorService,
+                     FunSunSelectorRepo funSunSelectorRepo) {
         this.logErrorCodeService = logErrorCodeService;
         this.tourInfoRepo = tourInfoRepo;
         this.tourService = tourService;
         this.parseLinkService = parseLinkService;
+        this.funSunSelectorService = funSunSelectorService;
+        this.funSunSelectorRepo = funSunSelectorRepo;
     }
 
     //one-hour delay
-//    @Scheduled(fixedDelay = 3_600_000)
-    @Scheduled(fixedDelay = 100_000)
+    @Scheduled(fixedDelay = 3_600_000)
     public void startParse() {
+
+        funSunSearchBySelectorEntity = funSunSelectorRepo.findByForWhichSite("funsun");
+        if (funSunSearchBySelectorEntity == null) {
+            return;
+        }
+
         shouldRun = true;
         System.out.println("================== start Scheduled ==================");
         System.out.println("================== start ChromeOptions ==================");
@@ -55,13 +68,11 @@ public class ParseTour {
 
         System.out.println("================== start sleep ==================");
         sleep();
-
-        System.out.println("================== start WebDriverManager ==================");
-        WebDriverManager.chromedriver().setup();
-        WebDriver webDriver = null;
-
         System.out.println("================== Loop get link from DB================== ");
-        for (ParseLinkEntity link : parseLinkService.findAll()) {
+        for (ParseLinkEntity parseLinkEntity : parseLinkService.findAll()) {
+            System.out.println("================== start WebDriverManager ==================");
+            WebDriverManager.chromedriver().setup();
+            WebDriver webDriver = null;
             if (!shouldRun) {
                 return;
             }
@@ -71,7 +82,7 @@ public class ParseTour {
                 System.out.println("================== start sleep ==================");
                 sleep();
                 System.out.println("================== start get link ==================");
-                webDriver.get(link.getLink());
+                webDriver.get(parseLinkEntity.getLink());
                 System.out.println("================== start sleep ==================");
                 sleep();
                 System.out.println("================== start parser ==================");
@@ -97,8 +108,8 @@ public class ParseTour {
         sleep();
         System.out.println("================== Try get info ==================");
         try {
-            hotelName = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotelInfoHead > div.flex > div:nth-child(1) > h1")).getText();
-            String price = webDriver.findElement(By.cssSelector("#app > div > div:nth-child(2) > div:nth-child(2) > div.hotel-info-box > div:nth-child(2) > div > div.pay > div.pay__price > div")).getText();
+            hotelName = webDriver.findElement(By.cssSelector(funSunSearchBySelectorEntity.getHotelName())).getText();
+            String price = webDriver.findElement(By.cssSelector(funSunSearchBySelectorEntity.getPrice())).getText();
             this.price = Integer.parseInt(price.replaceAll("[^\\d.]", ""));
             currentUrl = webDriver.getCurrentUrl();
 

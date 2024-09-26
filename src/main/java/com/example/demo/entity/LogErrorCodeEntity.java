@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class LogErrorCodeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
     String description;
     String date;

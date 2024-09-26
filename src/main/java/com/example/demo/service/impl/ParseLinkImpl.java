@@ -26,6 +26,11 @@ public class ParseLinkImpl implements ParseLinkService {
     }
 
     @Override
+    public void updateLink(ParseLinkEntity parseLinkEntity) {
+        parseLinkRepos.save(parseLinkEntity);
+    }
+
+    @Override
     public void deleteLinkById(Long id) {
         parseLinkRepos.deleteById(id);
     }
