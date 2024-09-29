@@ -1,9 +1,9 @@
 package com.example.demo.repository;
 
-import com.example.demo.entity.ParseLinkEntity;
+import com.example.demo.entity.LogErrorEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ParseLinkRepos extends JpaRepository<ParseLinkEntity, Long> {
+public interface LogErrorRepo extends JpaRepository<LogErrorEntity, Long> {
 }

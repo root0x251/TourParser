@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor
 @Table(name = "error_core_log")
-public class LogErrorCodeEntity {
+public class LogErrorEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +18,7 @@ public class LogErrorCodeEntity {
     @Column(name = "tour_name")
     String tourName;
 
-    public LogErrorCodeEntity(String description, String date, String tourName) {
+    public LogErrorEntity(String description, String date, String tourName) {
         this.description = description;
         this.date = date;
         this.tourName = tourName;
