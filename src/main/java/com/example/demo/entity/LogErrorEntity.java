@@ -2,25 +2,23 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "error_core_log")
-public class LogErrorCodeEntity {
+public class LogErrorEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     int id;
-
     String description;
     String date;
     @Column(name = "tour_name")
     String tourName;
 
-    public LogErrorCodeEntity() {
-    }
-
-    public LogErrorCodeEntity(String description, String date, String tourName) {
+    public LogErrorEntity(String description, String date, String tourName) {
         this.description = description;
         this.date = date;
         this.tourName = tourName;
