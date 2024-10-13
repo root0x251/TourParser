@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,11 +20,26 @@ public class TourPriceHistoryEntity {
     @Column(name = "date", nullable = false)
     private LocalDateTime date;
 
-    @Column(nullable = false)
-    private int price;
+    @Column(name = "old_price" ,nullable = false)
+    private int oldPrice;
 
-    @ManyToOne
-    @JoinColumn(name = "tour_id", nullable = false)
-    private TourEntity tour; // связь с таблицей tour
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tour_id")
+    @JsonIgnore
+    private TourEntity tourEntity;
 
+    public TourPriceHistoryEntity(LocalDateTime date, int oldPrice, TourEntity tourEntity) {
+        this.date = date;
+        this.oldPrice = oldPrice;
+        this.tourEntity = tourEntity;
+    }
+
+
+    @Override
+    public String toString() {
+        return "TourPriceHistoryEntity{" +
+                "date=" + date +
+                ", oldPrice=" + oldPrice +
+                '}';
+    }
 }

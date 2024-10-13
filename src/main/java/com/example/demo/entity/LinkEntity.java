@@ -12,19 +12,21 @@ public class LinkEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    int id;
+    private int id;
     @Column(name = "link", columnDefinition = "TEXT")
-    String link;
-
-    @OneToOne(mappedBy = "link", cascade = CascadeType.ALL)
-    private TourEntity tour; // связь с таблицей TourEntity
+    private String link;
 
     @ManyToOne
     @JoinColumn(name = "selector_id", nullable = false)
-    private SelectorEntity selector; // связь с таблицей SelectorEntity
+    private SelectorEntity selectorEntity;
 
-    public LinkEntity(String link, SelectorEntity selector) {
+    @OneToOne(mappedBy = "link", cascade = CascadeType.ALL)
+    private TourEntity tourEntity;
+
+    public LinkEntity(String link, SelectorEntity selectorEntity) {
         this.link = link;
-        this.selector = selector;
+        this.selectorEntity = selectorEntity;
     }
+
+
 }

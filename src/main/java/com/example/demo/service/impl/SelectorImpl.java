@@ -1,7 +1,7 @@
 package com.example.demo.service.impl;
 
 import com.example.demo.entity.SelectorEntity;
-import com.example.demo.repository.SelectorRepository;
+import com.example.demo.repository.SelectorRepo;
 import com.example.demo.service.BaseService;
 import org.springframework.stereotype.Service;
 
@@ -10,34 +10,35 @@ import java.util.Optional;
 
 @Service
 public class SelectorImpl implements BaseService<SelectorEntity, Long> {
-    private final SelectorRepository selectorRepository;
 
-    public SelectorImpl(SelectorRepository selectorRepository) {
-        this.selectorRepository = selectorRepository;
+    private final SelectorRepo selectorRepo;
+
+    public SelectorImpl(SelectorRepo linkRepository) {
+        this.selectorRepo = linkRepository;
     }
 
     @Override
     public List<SelectorEntity> findAll() {
-        return selectorRepository.findAll();
+        return (List<SelectorEntity>) selectorRepo.findAll();
     }
 
     @Override
     public Optional<SelectorEntity> findById(Long aLong) {
-        return selectorRepository.findById(aLong);
+        return selectorRepo.findById(aLong);
     }
 
     @Override
     public SelectorEntity save(SelectorEntity entity) {
-        return selectorRepository.save(entity);
+        return selectorRepo.save(entity);
     }
 
     @Override
     public SelectorEntity update(SelectorEntity entity) {
-        return selectorRepository.save(entity);
+        return selectorRepo.save(entity);
     }
 
     @Override
     public void deleteById(Long aLong) {
-        selectorRepository.deleteById(aLong);
+        selectorRepo.deleteById(aLong);
     }
 }

@@ -12,11 +12,11 @@ public class LogErrorEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int id;
-    String description;
-    String date;
+    private int id;
+    private String description;
+    private String date;
     @Column(name = "tour_name")
-    String tourName;
+    private String tourName;
 
     public LogErrorEntity(String description, String date, String tourName) {
         this.description = description;

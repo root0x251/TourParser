@@ -19,7 +19,7 @@ public class TourPriceHistoryImpl implements BaseService<TourPriceHistoryEntity,
 
     @Override
     public List<TourPriceHistoryEntity> findAll() {
-        return tourPriseHistoryRepository.findAll();
+        return (List<TourPriceHistoryEntity>) tourPriseHistoryRepository.findAll();
     }
 
     @Override

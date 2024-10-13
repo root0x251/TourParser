@@ -19,7 +19,7 @@ public class TourImpl implements BaseService<TourEntity, Long> {
 
     @Override
     public List<TourEntity> findAll() {
-        return tourRepository.findAll();
+        return (List<TourEntity>) tourRepository.findAll();
     }
 
     @Override
@@ -41,4 +41,5 @@ public class TourImpl implements BaseService<TourEntity, Long> {
     public void deleteById(Long aLong) {
         tourRepository.deleteById(aLong);
     }
+
 }

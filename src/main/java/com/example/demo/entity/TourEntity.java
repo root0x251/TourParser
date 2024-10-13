@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,20 +17,37 @@ public class TourEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private int id;
-    @Column(name = "hotel_name", columnDefinition = "TEXT")
+    @Column(name = "hotel_name")
     private String hotelName;
-    @Column(name = "current_price", columnDefinition = "INTEGER")
+    @Column(name = "current_price")
     private int currentPrice;
-    @Column(name = "price_change", columnDefinition = "INTEGER")
+    @Column(name = "price_change")
     private String priceChange;
 
     @OneToOne
     @JoinColumn(name = "link_id", nullable = false)
-    private LinkEntity link; // связь с таблицей LinkEntity
+    @JsonIgnore
+    private LinkEntity link;
 
-    @OneToMany(mappedBy = "tour", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TourPriceHistoryEntity> priceHistory = new ArrayList<>(); // связь с историей цен
+    @OneToMany(mappedBy = "tourEntity", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<TourPriceHistoryEntity> priceHistory = new ArrayList<>();
 
+    public TourEntity(String hotelName, int currentPrice, String priceChange, LinkEntity link) {
+        this.hotelName = hotelName;
+        this.currentPrice = currentPrice;
+        this.priceChange = priceChange;
+        this.link = link;
+    }
 
-
+    @Override
+    public String toString() {
+        return "TourEntity{" +
+                "\nid=" + id +
+                ", \nhotelName='" + hotelName + '\'' +
+                ", \ncurrentPrice=" + currentPrice +
+                ", \npriceChange='" + priceChange + '\'' +
+                ", \nlink=" + link.getLink() +
+                ", \npriceHistory=" + priceHistory +
+                '}' + "\n";
+    }
 }

@@ -19,7 +19,7 @@ public class LinkImpl implements BaseService<LinkEntity, Long> {
 
     @Override
     public List<LinkEntity> findAll() {
-        return linkRepository.findAll();
+        return (List<LinkEntity>) linkRepository.findAll();
     }
 
     @Override

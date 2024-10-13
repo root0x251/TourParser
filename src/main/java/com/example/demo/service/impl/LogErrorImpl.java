@@ -19,7 +19,7 @@ public class LogErrorImpl implements BaseService<LogErrorEntity, Long> {
 
     @Override
     public List<LogErrorEntity> findAll() {
-        return logErrorRepo.findAll();
+        return (List<LogErrorEntity>) logErrorRepo.findAll();
     }
 
     @Override
